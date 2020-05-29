@@ -1,0 +1,2 @@
+// Meilisearch Java client library
+rootProject.name = 'meili-parent'

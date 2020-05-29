@@ -1,0 +1,6 @@
+// Meilisearch (https://www.meilisearch.com)
+// --------------------- - - - - -
+// An idiomatic java client library for Meilisearch
+//
+// This is the parent module meilisearch java client library. The project contains various sub-modules
+// which provides various core and auxiliary dependencies and tools to work with meilisearch.
