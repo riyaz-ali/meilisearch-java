@@ -1,2 +1,5 @@
 // Meilisearch Java client library
 rootProject.name = 'meili-parent'
+
+// include gradle sub-modules
+include 'meili'
