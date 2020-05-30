@@ -1,13 +1,19 @@
 package net.riyazali.meili;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import net.riyazali.meili.Remote.Request;
+import net.riyazali.meili.Remote.Response;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static net.riyazali.meili.Precondition.checkNotNull;
 
@@ -81,6 +87,146 @@ import static net.riyazali.meili.Precondition.checkNotNull;
 
   // Public API
   // ------- - - - - -
+
+  // TODO: add better error handling support
+
+  /**
+   * Get a single document identified by it's primary key
+   *
+   * @param id the document's primary key
+   * @return the document instance if found else {@code null}
+   */
+  public @Nullable final T get(@NotNull String id) throws IOException {
+    Response response = remote.get(
+        Request.builder().path(String.format("/indexes/%s/documents/%s", uid(), id)).build());
+    return response.status() == 200 ? encoder.decode(response.body(), documentType) : null;
+  }
+
+  /**
+   * All returns an iterable using which you can iterate over all the records in the index. It
+   * transparently handles the pagination details so that it doesn't load a (potentially) large
+   * dataset into memory at once.
+   *
+   * @return Iterable that returns instances if type T
+   */
+  public @NotNull final Iterable<T> all() throws IOException {
+    // TODO: add pagination support
+    Response response = remote.get(
+        Request.builder().path(String.format("/indexes/%s/documents", uid())).build());
+    T[] docs = encoder.decode(response.body(), documentArrayType);
+    return Arrays.asList(docs);
+  }
+
+  /**
+   * Add a list of documents or replace them if they already exist.
+   *
+   * <p>
+   * If you send an already existing document (same id) the whole existing document will be
+   * overwritten by the new document. Fields previously in the document not present in the new
+   * document are removed.
+   *
+   * @param documents list of documents to add or update
+   * @see #update(T... documents) for partial updates
+   */
+  @SafeVarargs
+  public @NotNull final Update insert(T... documents) throws IOException {
+    String json = encoder.encode(Arrays.asList(documents));
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/documents", uid())).body(json).build();
+
+    Response response = remote.post(request);
+    if (response.status() != 202) {
+      throw new RuntimeException("failed to insert documents");
+    }
+
+    return makeUpdate(response);
+  }
+
+  /**
+   * Add a list of documents and update them if they already.
+   *
+   * <p>
+   * If you send an already existing document (same id) the old document will be only partially
+   * updated according to the fields of the new document. Thus, any fields not present in the new
+   * document are kept and remained unchanged.
+   *
+   * @param documents list of documents to add or update
+   * @see #insert(T... documents) for complete update
+   */
+  @SafeVarargs
+  public final @NotNull Update update(T... documents) throws IOException {
+    String json = encoder.encode(Arrays.asList(documents));
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/documents", uid())).body(json).build();
+
+    Response response = remote.put(request);
+    if (response.status() != 202) {
+      throw new RuntimeException("failed to insert documents");
+    }
+
+    return makeUpdate(response);
+  }
+
+  /**
+   * Delete the documents in the current index.
+   *
+   * @param documents list of documents to delete
+   */
+  @SafeVarargs
+  public final @NotNull Update delete(T... documents) throws IOException {
+    List<?> ids;
+    try {
+      Field primaryKeyField = documentType.getDeclaredField(primaryKey());
+      primaryKeyField.setAccessible(true);
+      ids = Arrays.stream(documents)
+          .map(doc -> {
+            try {
+              return primaryKeyField.get(doc);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          }).collect(Collectors.toList());
+    } catch (NoSuchFieldException ex) {
+      throw new RuntimeException(ex);
+    }
+
+    String json = encoder.encode(checkNotNull(ids));
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/documents/delete-batch", uid())).body(json).build();
+
+    Response response = remote.post(request);
+    if (response.status() != 202) {
+      throw new RuntimeException("failed to insert documents");
+    }
+
+    return makeUpdate(response);
+  }
+
+  /**
+   * Delete all documents in the current index
+   */
+  public final @NotNull Update clear() throws IOException {
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/documents", uid())).build();
+
+    Response response = remote.delete(request);
+    if (response.status() != 202) {
+      throw new RuntimeException("failed to insert documents");
+    }
+
+    return makeUpdate(response);
+  }
+
+  // Helpers
+  // ------- - - - -
+
+  @NotNull private Update makeUpdate(Response response) throws IOException {
+    Update update = encoder.decode(response.body(), Update.class);
+    update.index(this);
+    update.remote(remote);
+    update.encoder(encoder);
+    return update.refresh();
+  }
 
   // Factories
   // ------ - - - -
