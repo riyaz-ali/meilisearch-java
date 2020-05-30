@@ -5,7 +5,9 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import okio.Source;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Remote represents a service capable of communicating to Meilisearch server over a network.
@@ -49,13 +51,20 @@ public interface Remote {
   @Getter @Builder final class Request {
     private final String path;
     private final Map<String, String> query;
-    private final String body;
+    private final Source body;
   }
 
   /* Response class represents a single REST API response */
-  @Accessors(fluent = true)
-  @Getter @Builder final class Response {
-    private final int status;
-    private final String body;
+  abstract class Response implements AutoCloseable {
+
+    /**
+     * Get the HTTP status of the request
+     */
+    public abstract int status();
+
+    /**
+     * Get a reference to the underlying source stream
+     */
+    public abstract @Nullable Source body();
   }
 }

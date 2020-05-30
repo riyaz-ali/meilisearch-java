@@ -1,6 +1,7 @@
 package net.riyazali.meili;
 
 import java.lang.reflect.Type;
+import okio.Source;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,7 +17,7 @@ public interface Encoder {
    * @param object object to encode
    * @return JSON string representation of the object
    */
-  @NotNull <T> String encode(@NotNull T object);
+  @NotNull <T> Source encode(@NotNull T object);
 
   /**
    * Decode decodes the given json string and returns an object of type T
@@ -24,5 +25,5 @@ public interface Encoder {
    * @param json json string to decode
    * @return object of type T
    */
-  @NotNull <T> T decode(@NotNull String json, @NotNull Type type);
+  @NotNull <T> T decode(@NotNull Source json, @NotNull Type type);
 }

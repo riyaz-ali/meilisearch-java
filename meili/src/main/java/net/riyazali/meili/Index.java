@@ -1,6 +1,5 @@
 package net.riyazali.meili;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +11,7 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 import net.riyazali.meili.Remote.Request;
 import net.riyazali.meili.Remote.Response;
+import okio.Source;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,15 +74,16 @@ import static net.riyazali.meili.Precondition.checkNotNull;
   // ------------- - - - - -
 
   /* returns true if the index exists on meili server */
-  boolean exists() throws IOException {
-    return remote.get(
-        Request.builder().path(String.format("/indexes/%s", uid())).build()
-    ).status() != 404;
+  boolean exists() throws Exception {
+    Request request = Request.builder().path(String.format("/indexes/%s", uid())).build();
+    try (Response response = remote.get(request)) {
+      return response.status() != 404;
+    }
   }
 
-  void create() throws IOException {
-    String json = encoder.encode(this);
-    remote.post(Request.builder().path("indexes").body(json).build());
+  void create() throws Exception {
+    Source json = encoder.encode(this);
+    remote.post(Request.builder().path("indexes").body(json).build()).close();
   }
 
   // Public API
@@ -96,10 +97,13 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    * @param id the document's primary key
    * @return the document instance if found else {@code null}
    */
-  public @Nullable final T get(@NotNull String id) throws IOException {
-    Response response = remote.get(
-        Request.builder().path(String.format("/indexes/%s/documents/%s", uid(), id)).build());
-    return response.status() == 200 ? encoder.decode(response.body(), documentType) : null;
+  public @Nullable final T get(@NotNull String id) throws Exception {
+    Request request =
+        Request.builder().path(String.format("/indexes/%s/documents/%s", uid(), id)).build();
+
+    try (Response response = remote.get(request)) {
+      return response.status() == 200 ? encoder.decode(response.body(), documentType) : null;
+    }
   }
 
   /**
@@ -109,12 +113,13 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    *
    * @return Iterable that returns instances if type T
    */
-  public @NotNull final Iterable<T> all() throws IOException {
+  public @NotNull final Iterable<T> all() throws Exception {
     // TODO: add pagination support
-    Response response = remote.get(
-        Request.builder().path(String.format("/indexes/%s/documents", uid())).build());
-    T[] docs = encoder.decode(response.body(), documentArrayType);
-    return Arrays.asList(docs);
+    Request request = Request.builder().path(String.format("/indexes/%s/documents", uid())).build();
+    try (Response response = remote.get(request)) {
+      T[] docs = encoder.decode(response.body(), documentArrayType);
+      return Arrays.asList(docs);
+    }
   }
 
   /**
@@ -129,17 +134,18 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    * @see #update(T... documents) for partial updates
    */
   @SafeVarargs
-  public @NotNull final Update insert(T... documents) throws IOException {
-    String json = encoder.encode(Arrays.asList(documents));
+  public @NotNull final Update insert(T... documents) throws Exception {
+    Source json = encoder.encode(Arrays.asList(documents));
     Request request = Request.builder()
         .path(String.format("/indexes/%s/documents", uid())).body(json).build();
 
-    Response response = remote.post(request);
-    if (response.status() != 202) {
-      throw new RuntimeException("failed to insert documents");
-    }
+    try (Response response = remote.post(request)) {
+      if (response.status() != 202) {
+        throw new RuntimeException("failed to insert documents");
+      }
 
-    return makeUpdate(response);
+      return makeUpdate(response);
+    }
   }
 
   /**
@@ -154,17 +160,18 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    * @see #insert(T... documents) for complete update
    */
   @SafeVarargs
-  public final @NotNull Update update(T... documents) throws IOException {
-    String json = encoder.encode(Arrays.asList(documents));
+  public final @NotNull Update update(T... documents) throws Exception {
+    Source json = encoder.encode(Arrays.asList(documents));
     Request request = Request.builder()
         .path(String.format("/indexes/%s/documents", uid())).body(json).build();
 
-    Response response = remote.put(request);
-    if (response.status() != 202) {
-      throw new RuntimeException("failed to insert documents");
-    }
+    try (Response response = remote.put(request)) {
+      if (response.status() != 202) {
+        throw new RuntimeException("failed to insert documents");
+      }
 
-    return makeUpdate(response);
+      return makeUpdate(response);
+    }
   }
 
   /**
@@ -173,7 +180,7 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    * @param documents list of documents to delete
    */
   @SafeVarargs
-  public final @NotNull Update delete(T... documents) throws IOException {
+  public final @NotNull Update delete(T... documents) throws Exception {
     List<?> ids;
     try {
       Field primaryKeyField = documentType.getDeclaredField(primaryKey());
@@ -190,37 +197,39 @@ import static net.riyazali.meili.Precondition.checkNotNull;
       throw new RuntimeException(ex);
     }
 
-    String json = encoder.encode(checkNotNull(ids));
+    Source json = encoder.encode(checkNotNull(ids));
     Request request = Request.builder()
         .path(String.format("/indexes/%s/documents/delete-batch", uid())).body(json).build();
 
-    Response response = remote.post(request);
-    if (response.status() != 202) {
-      throw new RuntimeException("failed to insert documents");
-    }
+    try (Response response = remote.post(request)) {
+      if (response.status() != 202) {
+        throw new RuntimeException("failed to insert documents");
+      }
 
-    return makeUpdate(response);
+      return makeUpdate(response);
+    }
   }
 
   /**
    * Delete all documents in the current index
    */
-  public final @NotNull Update clear() throws IOException {
+  public final @NotNull Update clear() throws Exception {
     Request request = Request.builder()
         .path(String.format("/indexes/%s/documents", uid())).build();
 
-    Response response = remote.delete(request);
-    if (response.status() != 202) {
-      throw new RuntimeException("failed to insert documents");
-    }
+    try (Response response = remote.delete(request)) {
+      if (response.status() != 202) {
+        throw new RuntimeException("failed to insert documents");
+      }
 
-    return makeUpdate(response);
+      return makeUpdate(response);
+    }
   }
 
   // Helpers
   // ------- - - - -
 
-  @NotNull private Update makeUpdate(Response response) throws IOException {
+  @NotNull private Update makeUpdate(Response response) throws Exception {
     Update update = encoder.decode(response.body(), Update.class);
     update.index(this);
     update.remote(remote);

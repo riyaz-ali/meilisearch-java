@@ -1,6 +1,5 @@
 package net.riyazali.meili;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -112,21 +111,20 @@ import static net.riyazali.meili.Precondition.checkNotNull;
   /**
    * Refresh fetches / updates the update from the remote service
    */
-  public @NotNull Update refresh() throws IOException {
+  public @NotNull Update refresh() throws Exception {
     Index<?> index = checkNotNull(this.index);
     Remote remote = checkNotNull(this.remote);
     Encoder encoder = checkNotNull(this.encoder);
 
-    Response response = remote.get(
-        Request.builder().path(
-            String.format("/indexes/%s/updates/%s", index.uid(), updateId())
-        ).build()
-    );
+    Request request = Request.builder().path(
+        String.format("/indexes/%s/updates/%s", index.uid(), updateId())).build();
 
-    if (response.status() != 200) {
-      throw new RuntimeException("error fetching update details");
+    try (Response response = remote.get(request)) {
+      if (response.status() != 200) {
+        throw new RuntimeException("error fetching update details");
+      }
+
+      return copy(encoder.decode(response.body(), Update.class));
     }
-
-    return copy(encoder.decode(response.body(), Update.class));
   }
 }
