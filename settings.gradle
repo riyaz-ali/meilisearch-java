@@ -3,3 +3,5 @@ rootProject.name = 'meili-parent'
 
 // include gradle sub-modules
 include 'meili'
+include 'meili-remote-okhttp'
+
