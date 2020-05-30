@@ -70,14 +70,17 @@ import static net.riyazali.meili.Precondition.checkNotNull;
   // ------ - - - - -
 
   @ToString.Exclude
+  @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.PACKAGE)
   @Nullable private transient Index<?> index;
 
   @ToString.Exclude
+  @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.PACKAGE)
   @Nullable private transient Remote remote;
 
   @ToString.Exclude
+  @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.PACKAGE)
   @Nullable private transient Encoder encoder;
 
