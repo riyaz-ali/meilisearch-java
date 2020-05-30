@@ -47,7 +47,7 @@ public final class Meili {
    * @throws IllegalArgumentException if no sensible document properties can be deduced from the
    *                                  given class type
    */
-  public <T> @NotNull Index<T> index(Class<T> klass) throws IOException {
+  public <T> @NotNull Index<T> index(Class<T> klass) throws Exception {
     return index(klass, true);
   }
 
@@ -59,7 +59,7 @@ public final class Meili {
    * @throws IllegalArgumentException if no sensible document properties can be deduced from the
    *                                  given class type
    */
-  public <T> @NotNull Index<T> index(Class<T> klass, boolean autoCreate) throws IOException {
+  public <T> @NotNull Index<T> index(Class<T> klass, boolean autoCreate) throws Exception {
     Index<T> index = Index.from(klass);
     index.remote(remote);
     index.encoder(encoder);
