@@ -23,24 +23,40 @@ import org.jetbrains.annotations.Nullable;
 public interface Remote {
 
   /**
+   * Execute the given request using supplied HTTP method
+   *
+   * @param method  HTTP method to use
+   * @param request request object to send
+   */
+  @NotNull Response execute(@NotNull String method, @NotNull Request request) throws IOException;
+
+  /**
    * Perform a GET operation on the given resource
    */
-  @NotNull Response get(@NotNull Request request) throws IOException;
+  default @NotNull Response get(@NotNull Request request) throws IOException {
+    return execute("GET", request);
+  }
 
   /**
    * Perform a POST operation on the given resource
    */
-  @NotNull Response post(@NotNull Request request) throws IOException;
+  default @NotNull Response post(@NotNull Request request) throws IOException {
+    return execute("POST", request);
+  }
 
   /**
    * Perform a PUT operation on the given resource
    */
-  @NotNull Response put(@NotNull Request request) throws IOException;
+  default @NotNull Response put(@NotNull Request request) throws IOException {
+    return execute("PUT", request);
+  }
 
   /**
    * Perform a DELETE operation on the given resource
    */
-  @NotNull Response delete(@NotNull Request request) throws IOException;
+  default @NotNull Response delete(@NotNull Request request) throws IOException {
+    return execute("DELETE", request);
+  }
 
   // ------------ - - - - -
   // Common data transfer objects for request / response types
