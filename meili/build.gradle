@@ -33,6 +33,9 @@ dependencies {
 
   // Jupiter Engine
   testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+
+  // To load movies.json during tests
+  testImplementation('com.google.code.gson:gson:2.8.6')
 }
 
 // gradle test fixture
