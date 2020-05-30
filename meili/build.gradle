@@ -36,6 +36,9 @@ dependencies {
 
   // To load movies.json during tests
   testImplementation('com.google.code.gson:gson:2.8.6')
+
+  // to utilise gson encoder in tests
+  testImplementation(project(":meili-encoder-gson"))
 }
 
 // gradle test fixture

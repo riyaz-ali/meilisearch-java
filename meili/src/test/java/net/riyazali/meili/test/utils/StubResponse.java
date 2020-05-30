@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.ByteArrayInputStream;
 import net.riyazali.meili.Remote.Response;
+import net.riyazali.meili.Update;
 import okio.Okio;
 import okio.Source;
 import org.jetbrains.annotations.NotNull;
@@ -42,5 +43,10 @@ public class StubResponse extends Response {
   public static <T> @NotNull Response ok(T object) {
     return new StubResponse(200,
         Okio.source(new ByteArrayInputStream(gson.toJson(object).getBytes())));
+  }
+
+  public static @NotNull Response accepted(@NotNull Update update) {
+    return new StubResponse(202,
+        Okio.source(new ByteArrayInputStream(gson.toJson(update).getBytes())));
   }
 }
