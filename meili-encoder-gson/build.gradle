@@ -28,12 +28,18 @@ dependencies {
   // Test dependencies
   // ----------- - - - - -
 
+  // include core during tests
+  testImplementation(project(":meili"))
+
   // Jupiter API + Mockito
   testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
   testCompile("org.mockito:mockito-junit-jupiter:2.27.0")
 
   // Jupiter Engine
   testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+
+  // to generate and manage golden values
+  testImplementation("com.squareup.okio:okio:2.6.0")
 }
 
 // gradle test fixture
