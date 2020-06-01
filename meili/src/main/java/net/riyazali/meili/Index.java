@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static net.riyazali.meili.Precondition.checkNotNull;
+import static net.riyazali.meili.utils.ReflectionUtils.getParameterized;
 
 /**
  * Index class represents a single index in Meilisearch.
@@ -49,25 +50,11 @@ import static net.riyazali.meili.Precondition.checkNotNull;
   @ToString.Exclude
   private transient Class<T> documentType;
 
-  @ToString.Exclude
-  private transient Class<T> documentArrayType;
-
   // see: Index.from(...) method below for details
   private Index(String uid, String primaryKey, Class<T> documentType) {
     this.uid = checkNotNull(uid);
     this.primaryKey = checkNotNull(primaryKey);
-    documentType(checkNotNull(documentType));
-  }
-
-  // set the type of document class used
-  // see: https://stackoverflow.com/a/4901192/6611700
-  @SuppressWarnings("unchecked") private void documentType(Class<T> documentType) {
-    try {
-      this.documentType = documentType;
-      this.documentArrayType = (Class<T>) Class.forName("[L" + documentType.getName() + ";");
-    } catch (ClassNotFoundException cnfe) {
-      throw new RuntimeException(cnfe);
-    }
+    this.documentType = checkNotNull(documentType);
   }
 
   // some handy lifecycle operations
@@ -126,16 +113,13 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    */
   public @NotNull final Page<T> all(@NotNull PageConfig config) throws Exception {
     Request request = Request.builder()
-        .path(String.format("/indexes/%s/documents", uid()))
-        .query("limit", Integer.toString(config.limit()))
-        .query("offset", Integer.toString(config.offset()))
-        .query("attributes", String.join(",", config.attributes()))
-        .build();
+        .path(String.format("/indexes/%s/documents", uid())).query(config.map()).build();
 
     // execute request and return page
     try (Response response = remote.get(request)) {
-      T[] docs = encoder.decode(response.body(), documentArrayType);
-      return new Page<>(Arrays.asList(docs), config);
+      List<T> docs = encoder.decode(response.body(),
+          getParameterized(null, List.class, documentType));
+      return new Page<>(docs, config);
     }
   }
 
