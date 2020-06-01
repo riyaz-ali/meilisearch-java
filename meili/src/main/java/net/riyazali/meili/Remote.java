@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Singular;
 import lombok.experimental.Accessors;
 import okio.Source;
 import org.jetbrains.annotations.NotNull;
@@ -66,7 +67,7 @@ public interface Remote {
   @Accessors(fluent = true)
   @Getter @Builder final class Request {
     private final String path;
-    private final Map<String, String> query;
+    @Singular("query") private final Map<String, String> query;
     private final Source body;
   }
 

@@ -111,14 +111,31 @@ import static net.riyazali.meili.Precondition.checkNotNull;
    * transparently handles the pagination details so that it doesn't load a (potentially) large
    * dataset into memory at once.
    *
-   * @return Iterable that returns instances if type T
+   * @return page with results
    */
-  public @NotNull final Iterable<T> all() throws Exception {
-    // TODO: add pagination support
-    Request request = Request.builder().path(String.format("/indexes/%s/documents", uid())).build();
+  public @NotNull final Page<T> all() throws Exception {
+    return all(PageConfig.getDefault());
+  }
+
+  /**
+   * All returns an iterable using which you can iterate over all the records in the index. It
+   * transparently handles the pagination details so that it doesn't load a (potentially) large
+   * dataset into memory at once.
+   *
+   * @return page with results
+   */
+  public @NotNull final Page<T> all(@NotNull PageConfig config) throws Exception {
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/documents", uid()))
+        .query("limit", Integer.toString(config.limit()))
+        .query("offset", Integer.toString(config.offset()))
+        .query("attributes", String.join(",", config.attributes()))
+        .build();
+
+    // execute request and return page
     try (Response response = remote.get(request)) {
       T[] docs = encoder.decode(response.body(), documentArrayType);
-      return Arrays.asList(docs);
+      return new Page<>(Arrays.asList(docs), config);
     }
   }
 
