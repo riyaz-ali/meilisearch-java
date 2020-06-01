@@ -6,6 +6,7 @@ import net.riyazali.meili.GsonEncoder;
 import net.riyazali.meili.Index;
 import net.riyazali.meili.Meili;
 import net.riyazali.meili.Remote;
+import net.riyazali.meili.SearchPage;
 import net.riyazali.meili.Update;
 import net.riyazali.meili.test.utils.Movie;
 import net.riyazali.meili.test.utils.StubResponse;
@@ -66,6 +67,24 @@ class MeiliIndexTest {
 
     // then
     Iterator<Movie> it = r.iterator();
+    for (Movie movie : movies) {
+      assertEquals(movie, it.next());
+    }
+  }
+
+  @DisplayName("verify index can perform search on documents")
+  @Test void verifyDocumentSearch() throws Exception {
+    // given
+    List<Movie> movies = Movie.read();
+    when(remote.get(any())).thenReturn(StubResponse.ok(new SearchPage.Response<>(movies)));
+
+    // when
+    SearchPage<Movie> search = (new Meili(remote, GsonEncoder.create()))
+        .index(Movie.class).search("american");
+
+
+    // then
+    Iterator<Movie> it = search.iterator();
     for (Movie movie : movies) {
       assertEquals(movie, it.next());
     }

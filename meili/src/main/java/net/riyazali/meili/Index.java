@@ -124,6 +124,41 @@ import static net.riyazali.meili.utils.ReflectionUtils.getParameterized;
   }
 
   /**
+   * Search executes a search for documents matching a specific query in the current index.
+   *
+   * @param query the search query
+   * @see <a href="https://docs.meilisearch.com/guides/advanced_guides/search_parameters.html#query-q">Query
+   * syntax</a>
+   * @see <a href="https://docs.meilisearch.com/guides/advanced_guides/search_parameters.html">Search
+   * Parameters</a>
+   */
+  public @NotNull SearchPage<T> search(@NotNull String query) throws Exception {
+    return search(SearchConfig.builder().query(query).build());
+  }
+
+  /**
+   * Search executes a search for documents matching a specific query in the current index.
+   *
+   * @param config the search config
+   * @see <a href="https://docs.meilisearch.com/guides/advanced_guides/search_parameters.html#query-q">Query
+   * syntax</a>
+   * @see <a href="https://docs.meilisearch.com/guides/advanced_guides/search_parameters.html">Search
+   * Parameters</a>
+   */
+  public @NotNull SearchPage<T> search(@NotNull SearchConfig config) throws Exception {
+    Request request = Request.builder()
+        .path(String.format("/indexes/%s/search", uid())).query(config.map()).build();
+
+    // execute request and return page
+    try (Response response = remote.get(request)) {
+      new SearchPage.Response<>(null);
+      SearchPage.Response<T> r = encoder.decode(response.body(),
+          getParameterized(null, SearchPage.Response.class, documentType));
+      return new SearchPage<>(r, config);
+    }
+  }
+
+  /**
    * Add a list of documents or replace them if they already exist.
    *
    * <p>
