@@ -4,3 +4,34 @@
 //
 // This is the parent module meilisearch java client library. The project contains various sub-modules
 // which provides various core and auxiliary dependencies and tools to work with meilisearch.
+
+subprojects {
+  apply plugin: 'java-library'
+  apply plugin: 'maven'
+
+  group = "net.riyazali.meili"
+
+  // external repositories to fetch dependencies from
+  repositories {
+    mavenCentral()
+  }
+
+  // common dependencies
+  dependencies {
+    // to provide intelligent ide support and warnings
+    implementation("org.jetbrains:annotations:19.0.0")
+
+    // Test dependencies
+    // ----------- - - - - -
+
+    // Jupiter API + Mockito
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
+    testCompile("org.mockito:mockito-junit-jupiter:2.27.0")
+
+    // Jupiter Engine
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+  }
+
+  // gradle test fixture
+  test { useJUnitPlatform() }
+}

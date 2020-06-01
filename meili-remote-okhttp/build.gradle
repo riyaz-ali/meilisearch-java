@@ -2,38 +2,11 @@
 // ---------------- - - - - -
 // This module provides an implementation of Remote service backed by OkHttp 3
 
-plugins {
-  // Core plugin to enable building a java library
-  id 'java-library'
-}
-
-// external repositories to fetch dependencies from
-repositories {
-  mavenCentral()
-}
-
 dependencies {
-  // to provide intelligent ide support and warnings
-  implementation("org.jetbrains:annotations:19.0.0")
 
   // okhttp3 version 4
   implementation("com.squareup.okhttp3:okhttp:4.7.2")
 
   // required to implement the encoder service interface
   compileOnly(project(":meili"))
-  // Test dependencies
-  // ----------- - - - - -
-
-  // Jupiter API + Mockito
-  testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
-  testCompile("org.mockito:mockito-junit-jupiter:2.27.0")
-
-  testCompile(project(":meili-remote-okhttp"))
-  testCompile(project(":meili-encoder-gson"))
-
-  // Jupiter Engine
-  testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 }
-
-// gradle test fixture
-test { useJUnitPlatform() }
